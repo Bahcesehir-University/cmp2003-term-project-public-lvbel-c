@@ -42,7 +42,8 @@ void TripAnalyzer::ingestFile(const string& csvPath) {
     ifstream file(csvPath);
     if (!file.is_open()) return;
 
-
+    pickupZoneTripCounts.reserve(300);
+    zoneHourlyTripCounts.reserve(300);
 
     string line;
     line.reserve(256);
@@ -89,6 +90,7 @@ vector<ZoneCount> TripAnalyzer::topZones(int k) const {
     }
 
     vector<ZoneCount> results;
+    results.reserve(k);
     while (!minHeap.empty()) {
         results.push_back(minHeap.top());
         minHeap.pop();
@@ -118,6 +120,7 @@ vector<SlotCount> TripAnalyzer::topBusySlots(int k) const {
     }
 
     vector<SlotCount> results;
+    results.reserve(k);
     while (!minHeap.empty()) {
         results.push_back(minHeap.top());
         minHeap.pop();
