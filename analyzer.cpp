@@ -1,3 +1,5 @@
+C++
+
 #include "analyzer.h"
 #include <iostream>
 #include <fstream>
@@ -18,23 +20,31 @@ static int retrieveHourPart(const string &fullDate) {
 }
 
 bool TripAnalyzer::analyzeLineContent(const string &rawLine, string &targetZone, int &targetHour) {
-    if (rawLine.empty() || rawLine[0] == 'T') return false;
+    if (rawLine.empty() || rawLine[0] == 'T' || rawLine[0] == 'v' || rawLine[0] == 'V') return false;
 
     size_t p1 = rawLine.find(',');
     if (p1 == string::npos) return false;
-    size_t p2 = rawLine.find(',', p1 + 1);
+    
+    size_t p2 = rawLine.find(',');
     if (p2 == string::npos) return false;
-    size_t p3 = rawLine.find(',', p2 + 1);
+    
+    size_t p3 = rawLine.find(',', p1 + 1);
     if (p3 == string::npos) return false;
+    
     size_t p4 = rawLine.find(',', p3 + 1);
     if (p4 == string::npos) return false;
+
     size_t p5 = rawLine.find(',', p4 + 1);
     if (p5 == string::npos) return false;
 
-    targetZone = rawLine.substr(p1 + 1, p2 - p1 - 1);
-    string dateVal = rawLine.substr(p3 + 1, p4 - p3 - 1);
+    size_t p6 = rawLine.find(',', p5 + 1);
+    if (p6 == string::npos) return false;
+
+    targetZone = rawLine.substr(p5 + 1, p6 - p5 - 1);
+    string dateVal = rawLine.substr(p1 + 1, p3 - p1 - 1);
 
     if (targetZone.empty() || dateVal.empty()) return false;
+
     targetHour = retrieveHourPart(dateVal);
     
     return (targetHour >= 0 && targetHour <= 23);
@@ -44,8 +54,8 @@ void TripAnalyzer::ingestFile(const string& csvPath) {
     ifstream file(csvPath);
     if (!file.is_open()) return;
 
-    pickupZoneTripCounts.reserve(300);
-    zoneHourlyTripCounts.reserve(300);
+    pickupZoneTripCounts.reserve(1000);
+    zoneHourlyTripCounts.reserve(1000);
 
     string line;
     line.reserve(256);
@@ -59,7 +69,7 @@ void TripAnalyzer::ingestFile(const string& csvPath) {
     int hour;
 
     while (getline(file, line)) {
-        if (!line.empty() && line.back() == '\r') {
+        while (!line.empty() && (line.back() == '\r' || line.back() == '\n')) {
             line.pop_back();
         }
 
@@ -68,7 +78,7 @@ void TripAnalyzer::ingestFile(const string& csvPath) {
             
             vector<long long>& hourlyVec = zoneHourlyTripCounts[zone];
             if (hourlyVec.empty()) {
-                hourlyVec.resize(24, 0);
+                hourlyVec.assign(24, 0);
             }
             hourlyVec[hour]++;
         }
@@ -86,13 +96,14 @@ vector<ZoneCount> TripAnalyzer::topZones(int k) const {
     
     priority_queue<ZoneCount, vector<ZoneCount>, decltype(cmp)> minHeap(cmp);
 
-    for (auto it = pickupZoneTripCounts.begin(); it != pickupZoneTripCounts.end(); ++it) {
-        minHeap.push({it->first, it->second});
-        if (minHeap.size() > (size_t)k) minHeap.pop();
+    for (const auto& kv : pickupZoneTripCounts) {
+        minHeap.push({kv.first, kv.second});
+        if (minHeap.size() > (size_t)k) {
+            minHeap.pop();
+        }
     }
 
     vector<ZoneCount> results;
-    results.reserve(k);
     while (!minHeap.empty()) {
         results.push_back(minHeap.top());
         minHeap.pop();
@@ -112,17 +123,18 @@ vector<SlotCount> TripAnalyzer::topBusySlots(int k) const {
 
     priority_queue<SlotCount, vector<SlotCount>, decltype(cmp)> minHeap(cmp);
 
-    for (auto it = zoneHourlyTripCounts.begin(); it != zoneHourlyTripCounts.end(); ++it) {
+    for (const auto& kv : zoneHourlyTripCounts) {
         for (int h = 0; h < 24; ++h) {
-            if (it->second[h] > 0) {
-                minHeap.push({it->first, h, it->second[h]});
-                if (minHeap.size() > (size_t)k) minHeap.pop();
+            if (kv.second[h] > 0) {
+                minHeap.push({kv.first, h, kv.second[h]});
+                if (minHeap.size() > (size_t)k) {
+                    minHeap.pop();
+                }
             }
         }
     }
 
     vector<SlotCount> results;
-    results.reserve(k);
     while (!minHeap.empty()) {
         results.push_back(minHeap.top());
         minHeap.pop();
