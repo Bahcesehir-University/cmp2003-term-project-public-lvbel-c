@@ -23,10 +23,10 @@ bool TripAnalyzer::analyzeLineContent(const string &rawLine, string &targetZone,
     size_t p1 = rawLine.find(',');
     if (p1 == string::npos) return false;
     
-    size_t p2 = rawLine.find(',');
+    size_t p2 = rawLine.find(',', p1 + 1);
     if (p2 == string::npos) return false;
     
-    size_t p3 = rawLine.find(',', p1 + 1);
+    size_t p3 = rawLine.find(',', p2 + 1);
     if (p3 == string::npos) return false;
     
     size_t p4 = rawLine.find(',', p3 + 1);
@@ -35,11 +35,8 @@ bool TripAnalyzer::analyzeLineContent(const string &rawLine, string &targetZone,
     size_t p5 = rawLine.find(',', p4 + 1);
     if (p5 == string::npos) return false;
 
-    size_t p6 = rawLine.find(',', p5 + 1);
-    if (p6 == string::npos) return false;
-
-    targetZone = rawLine.substr(p5 + 1, p6 - p5 - 1);
-    string dateVal = rawLine.substr(p1 + 1, p3 - p1 - 1);
+    targetZone = rawLine.substr(p1 + 1, p2 - p1 - 1);
+    string dateVal = rawLine.substr(p3 + 1, p4 - p3 - 1);
 
     if (targetZone.empty() || dateVal.empty()) return false;
 
@@ -52,8 +49,8 @@ void TripAnalyzer::ingestFile(const string& csvPath) {
     ifstream file(csvPath);
     if (!file.is_open()) return;
 
-    pickupZoneTripCounts.reserve(1000);
-    zoneHourlyTripCounts.reserve(1000);
+    pickupZoneTripCounts.reserve(300);
+    zoneHourlyTripCounts.reserve(300);
 
     string line;
     line.reserve(256);
@@ -76,7 +73,7 @@ void TripAnalyzer::ingestFile(const string& csvPath) {
             
             vector<long long>& hourlyVec = zoneHourlyTripCounts[zone];
             if (hourlyVec.empty()) {
-                hourlyVec.assign(24, 0);
+                hourlyVec.resize(24, 0);
             }
             hourlyVec[hour]++;
         }
@@ -102,6 +99,7 @@ vector<ZoneCount> TripAnalyzer::topZones(int k) const {
     }
 
     vector<ZoneCount> results;
+    results.reserve(minHeap.size());
     while (!minHeap.empty()) {
         results.push_back(minHeap.top());
         minHeap.pop();
@@ -133,6 +131,7 @@ vector<SlotCount> TripAnalyzer::topBusySlots(int k) const {
     }
 
     vector<SlotCount> results;
+    results.reserve(minHeap.size());
     while (!minHeap.empty()) {
         results.push_back(minHeap.top());
         minHeap.pop();
