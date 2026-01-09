@@ -1,9 +1,11 @@
 #include "analyzer.h"
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include <string>
+#include <unordered_map>
 #include <queue>
 #include <algorithm>
-#include <string>
 
 using namespace std;
 
@@ -84,8 +86,8 @@ vector<ZoneCount> TripAnalyzer::topZones(int k) const {
     
     priority_queue<ZoneCount, vector<ZoneCount>, decltype(cmp)> minHeap(cmp);
 
-    for (const auto& kv : pickupZoneTripCounts) {
-        minHeap.push({kv.first, kv.second});
+    for (auto it = pickupZoneTripCounts.begin(); it != pickupZoneTripCounts.end(); ++it) {
+        minHeap.push({it->first, it->second});
         if (minHeap.size() > (size_t)k) minHeap.pop();
     }
 
@@ -110,10 +112,10 @@ vector<SlotCount> TripAnalyzer::topBusySlots(int k) const {
 
     priority_queue<SlotCount, vector<SlotCount>, decltype(cmp)> minHeap(cmp);
 
-    for (const auto& kv : zoneHourlyTripCounts) {
+    for (auto it = zoneHourlyTripCounts.begin(); it != zoneHourlyTripCounts.end(); ++it) {
         for (int h = 0; h < 24; ++h) {
-            if (kv.second[h] > 0) {
-                minHeap.push({kv.first, h, kv.second[h]});
+            if (it->second[h] > 0) {
+                minHeap.push({it->first, h, it->second[h]});
                 if (minHeap.size() > (size_t)k) minHeap.pop();
             }
         }
