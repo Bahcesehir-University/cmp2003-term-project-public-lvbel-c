@@ -1,15 +1,14 @@
 #include "analyzer.h"
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <queue>
 #include <algorithm>
+#include <vector>
+#include <string>
+#include <unordered_map>
 
 using namespace std;
 
-TripAnalyzer::TripAnalyzer() {
-    pickupZoneTripCounts.reserve(300);
-    zoneHourlyTripCounts.reserve(300);
-}
 
 int TripAnalyzer::retrieveHourPart(const string &fullDate) {
     size_t gapIndex = fullDate.find(' ');
@@ -51,8 +50,12 @@ void TripAnalyzer::ingestFile(const string& csvPath) {
         if (!line.empty() && line.back() == '\r') line.pop_back();
         if (analyzeLineContent(line, zone, hour)) {
             pickupZoneTripCounts[zone]++;
+            
+            // Vector kütüphanesi burada hourlyVec için kritik
             vector<long long>& hourlyVec = zoneHourlyTripCounts[zone];
-            if (hourlyVec.empty()) hourlyVec.resize(24, 0);
+            if (hourlyVec.empty()) {
+                hourlyVec.resize(24, 0);
+            }
             hourlyVec[hour]++;
         }
     }
