@@ -1,5 +1,3 @@
-C++
-
 #include "analyzer.h"
 #include <iostream>
 #include <fstream>
@@ -142,4 +140,5 @@ vector<SlotCount> TripAnalyzer::topBusySlots(int k) const {
     reverse(results.begin(), results.end());
     return results;
 }
+
 
