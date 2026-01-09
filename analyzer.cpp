@@ -18,20 +18,16 @@ static int retrieveHourPart(const string &fullDate) {
 }
 
 bool TripAnalyzer::analyzeLineContent(const string &rawLine, string &targetZone, int &targetHour) {
-    if (rawLine.empty() || rawLine[0] == 'T' || rawLine[0] == 'v' || rawLine[0] == 'V') return false;
+    if (rawLine.empty() || rawLine[0] == 'T' || rawLine[0] == 'V' || rawLine[0] == 'v') return false;
 
     size_t p1 = rawLine.find(',');
     if (p1 == string::npos) return false;
-    
     size_t p2 = rawLine.find(',', p1 + 1);
     if (p2 == string::npos) return false;
-    
     size_t p3 = rawLine.find(',', p2 + 1);
     if (p3 == string::npos) return false;
-    
     size_t p4 = rawLine.find(',', p3 + 1);
     if (p4 == string::npos) return false;
-
     size_t p5 = rawLine.find(',', p4 + 1);
     if (p5 == string::npos) return false;
 
@@ -39,7 +35,6 @@ bool TripAnalyzer::analyzeLineContent(const string &rawLine, string &targetZone,
     string dateVal = rawLine.substr(p3 + 1, p4 - p3 - 1);
 
     if (targetZone.empty() || dateVal.empty()) return false;
-
     targetHour = retrieveHourPart(dateVal);
     
     return (targetHour >= 0 && targetHour <= 23);
@@ -49,8 +44,8 @@ void TripAnalyzer::ingestFile(const string& csvPath) {
     ifstream file(csvPath);
     if (!file.is_open()) return;
 
-    pickupZoneTripCounts.reserve(300);
-    zoneHourlyTripCounts.reserve(300);
+    pickupZoneTripCounts.reserve(1000);
+    zoneHourlyTripCounts.reserve(1000);
 
     string line;
     line.reserve(256);
@@ -67,13 +62,14 @@ void TripAnalyzer::ingestFile(const string& csvPath) {
         while (!line.empty() && (line.back() == '\r' || line.back() == '\n')) {
             line.pop_back();
         }
+        if (line.empty()) continue;
 
         if (analyzeLineContent(line, zone, hour)) {
             pickupZoneTripCounts[zone]++;
             
             vector<long long>& hourlyVec = zoneHourlyTripCounts[zone];
             if (hourlyVec.empty()) {
-                hourlyVec.resize(24, 0);
+                hourlyVec.assign(24, 0);
             }
             hourlyVec[hour]++;
         }
@@ -93,9 +89,7 @@ vector<ZoneCount> TripAnalyzer::topZones(int k) const {
 
     for (const auto& kv : pickupZoneTripCounts) {
         minHeap.push({kv.first, kv.second});
-        if (minHeap.size() > (size_t)k) {
-            minHeap.pop();
-        }
+        if (minHeap.size() > (size_t)k) minHeap.pop();
     }
 
     vector<ZoneCount> results;
@@ -123,9 +117,7 @@ vector<SlotCount> TripAnalyzer::topBusySlots(int k) const {
         for (int h = 0; h < 24; ++h) {
             if (kv.second[h] > 0) {
                 minHeap.push({kv.first, h, kv.second[h]});
-                if (minHeap.size() > (size_t)k) {
-                    minHeap.pop();
-                }
+                if (minHeap.size() > (size_t)k) minHeap.pop();
             }
         }
     }
@@ -139,5 +131,6 @@ vector<SlotCount> TripAnalyzer::topBusySlots(int k) const {
     reverse(results.begin(), results.end());
     return results;
 }
+
 
 
