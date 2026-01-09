@@ -5,33 +5,33 @@
 #include <vector>
 #include <unordered_map>
 
-using namespace std;
-
 struct ZoneCount {
-    string zone;
+    std::string zone;
     long long count;
 };
 
 struct SlotCount {
-    string zone;
+    std::string zone;
     int hour;
     long long count;
 };
 
 class TripAnalyzer {
 public:
-    void ingestFile(const string& csvPath);
-    
-    vector<ZoneCount> topZones(int k = 10) const;
-    vector<SlotCount> topBusySlots(int k = 10) const;
+    TripAnalyzer();
+    void ingestFile(const std::string& csvPath);
+    std::vector<ZoneCount> topZones(int k = 10) const;
+    std::vector<SlotCount> topBusySlots(int k = 10) const;
 
 private:
-    unordered_map<string, long long> pickupZoneTripCounts;
-    unordered_map<string, vector<long long>> zoneHourlyTripCounts;
-    bool analyzeLineContent(const string &rawLine, string &targetZone, int &targetHour);
+    std::unordered_map<std::string, long long> pickupZoneTripCounts;
+    std::unordered_map<std::string, std::vector<long long>> zoneHourlyTripCounts;
+    bool analyzeLineContent(const std::string &rawLine, std::string &targetZone, int &targetHour);
+    static int retrieveHourPart(const std::string &fullDate);
 };
 
 #endif
+
 
 
 
